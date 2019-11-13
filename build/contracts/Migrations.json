@@ -1377,18 +1377,18 @@
     "3": {
       "events": {},
       "links": {},
-      "address": "0xC3F321c726D73D48586dd44C53C82C3F7192390f",
-      "transactionHash": "0x5aec64ed2d78fbbb30dc85673829bddb5fe92f41d574a81091e2a684783c1147"
+      "address": "0xe2d1ab5069C5e0eBfD833e31090eA54D62Cac9E4",
+      "transactionHash": "0xaa07838dc10050c04cd1ce528baa4aa77c31a979daa9bdee395dd89dedbf4043"
     },
     "5777": {
       "events": {},
       "links": {},
-      "address": "0xCDA0e79DC079004358FE92041f6678F83DA6D1Fe",
-      "transactionHash": "0xa3b3186e44ce6739935674abf6460e4a92484c98101a99cc99f71af341033ac7"
+      "address": "0xa913c9C31C61Ec79Ccc19816b09e7c495e1ddf91",
+      "transactionHash": "0x1c20a02e84854a24d3820210cdac4a59ce60b7acb4cec6985e32cc2207713e2a"
     }
   },
   "schemaVersion": "3.0.16",
-  "updatedAt": "2019-11-04T15:10:22.150Z",
+  "updatedAt": "2019-11-13T13:07:06.800Z",
   "devdoc": {
     "methods": {}
   },

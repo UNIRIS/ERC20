@@ -1,38 +1,38 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Pausable.sol";
 
-contract UnirisToken is ERC20 {
+contract UnirisToken is ERC20Pausable, ERC20Detailed {
 
-  /* TOKEN ERC20 PROPERTIES */
-
-  string constant NAME = "UnirisToken";
-  string constant SYMBOL = "UCO";
-  uint8 constant DECIMALS = 18;
-
-  /* TOKEN DISTRIBUTION */
-
-  // 8.2% for the private sale
+  //8.2% for the private sale will be transfered to vesting smart contracts
   uint256 public constant private_sale_supply = 820000000000000000000000000;
-  // 30% for the public sale
+
+  //30% for the public sale
   uint256 public constant public_sale_supply = 3000000000000000000000000000;
-  // 23.6% for the deliverables
+
+  //23.6% for the deliverables (10% will be available before the mainnet for early contributions)
   uint256 public constant deliverable_supply = 2360000000000000000000000000;
-  // 14.6% for the network pool
+
+  //14.6% for the network pool (locked until mainnet)
   uint256 public constant network_pool_supply = 1460000000000000000000000000;
-  // 9% for the enhancements
+
+  //9% for the enhancements (locked unti mainnet)
   uint256 public constant enhancement_supply = 900000000000000000000000000;
-  // 5.6% for the team
+
+  //5.6% for the team (10% will be available before the mainnet as needed)
   uint256 public constant team_supply = 560000000000000000000000000;
+
   //3.4% for the Exch. Pool
   uint256 public constant exch_pool_supply = 340000000000000000000000000;
+
   //3.4% for the marketing
   uint256 public constant marketing_supply = 340000000000000000000000000;
+
   //2.2% for the foundation
   uint256 public constant foundation_supply = 220000000000000000000000000;
-
-  /* BENIFICIARIES */
 
   address public private_sale_beneficiary;
   address public public_sale_beneficiary;
@@ -44,24 +44,22 @@ contract UnirisToken is ERC20 {
   address public marketing_beneficiary;
   address public foundation_beneficiary;
 
-  /* VESTING */
+  modifier onlyUnlocked(address from, uint256 value) {
+    //Network pool and enhancement are locked until the mainnet
+    require(from != network_pool_beneficiary, "Locked account");
+    require(from != enhancement_beneficiary, "Locked account");
 
-  //End date of the vesting period (in seconds) //2 years
-  uint256 public vesting_end_date;
-  //How many percent we can release per year during the vesting period
-  uint8 public release_yearly_rate;
-  //Cliff vesting period to prevent transfer except for public sale beneficiaries (in seconds)
-  uint256 public cliff_end_date; //0 year
-
-  uint256 constant seconds_per_years = 31556952;
-  uint8 private vesting_years;
-
-  struct yearly_release {
-    uint256 start_with;
-    uint256 amount;
+    //Deliverables and team tokens are only unlocked for 10% of their supply
+    if (from == deliverables_beneficiary) {
+      uint256 _delivered = deliverable_supply - balanceOf(deliverables_beneficiary);
+      require(_delivered.add(value) <= deliverable_supply.mul(10).div(100), "Only 10% of the supply is unlocked");
+    }
+    else if (from == team_beneficiary) {
+      uint256 _delivered = team_supply - balanceOf(team_beneficiary);
+      require(_delivered.add(value) <= team_supply.mul(10).div(100), "Only 10% of the supply is unlocked");
+    }
+    _;
   }
-
-  mapping(address => mapping(uint8 => yearly_release)) public releases;
 
   constructor(
     address _private_sale_beneficiary,
@@ -72,10 +70,8 @@ contract UnirisToken is ERC20 {
     address _team_beneficiary,
     address _exch_pool_beneficiary,
     address _marketing_beneficiary,
-    address _foundation_beneficiary,
-    uint256 _vesting_end_date,
-    uint256 _cliff_end_date,
-    uint8 _release_yearly_rate) public {
+    address _foundation_beneficiary
+    ) public ERC20Detailed("UnirisToken", "UCO", 18) {
 
     require(_private_sale_beneficiary != address(0), "Invalid private sale beneficiary address");
     require(_public_sale_beneficiary != address(0), "Invalid public sale beneficiary address");
@@ -87,10 +83,6 @@ contract UnirisToken is ERC20 {
     require(_marketing_beneficiary != address(0), "Invalid marketing beneficiary address");
     require(_foundation_beneficiary != address(0), "Invalid foundation beneficiary address");
 
-    require(_vesting_end_date > now, "Vesting end date must be in the future");
-    require(_cliff_end_date > now && _cliff_end_date < _vesting_end_date, "Cliff end date must in the future and before the vesting end date");
-    require(_release_yearly_rate > 0, "Release yearly rate must be greater than 0");
-
     private_sale_beneficiary = _private_sale_beneficiary;
     public_sale_beneficiary = _public_sale_beneficiary;
     deliverables_beneficiary = _deliverables_beneficiary;
@@ -100,11 +92,6 @@ contract UnirisToken is ERC20 {
     exch_pool_beneficiary = _exch_pool_beneficiary;
     marketing_beneficiary = _marketing_beneficiary;
     foundation_beneficiary = _foundation_beneficiary;
-
-    vesting_end_date = _vesting_end_date;
-    cliff_end_date = _cliff_end_date;
-    release_yearly_rate = _release_yearly_rate;
-    vesting_years = uint8(_vesting_end_date.sub(now).div(seconds_per_years));
 
     _mint(private_sale_beneficiary, private_sale_supply);
     _mint(public_sale_beneficiary, public_sale_supply);
@@ -117,70 +104,11 @@ contract UnirisToken is ERC20 {
     _mint(foundation_beneficiary, foundation_supply);
   }
 
-  function transfer(address to, uint256 value) public returns (bool) {
-    //Only private sale beneficiary can do direct transfer during the vesting period ignoring the cliff period
-    if (msg.sender != private_sale_beneficiary && now < vesting_end_date) {
-      releaseAndTransfer(msg.sender, to, value);
-    } else {
-      super.transfer(to, value);
-    }
+  function transfer(address _to, uint256 _value) public onlyUnlocked(msg.sender, _value) returns (bool success) {
+    return super.transfer(_to, _value);
   }
 
-  function transferFrom(address from, address to, uint256 value) public returns (bool) {
-    //Only approved address from the spent public sale beneficiary are allowed to be transfered
-    //during the vesting period ignoring the cliff period
-    if (from == public_sale_beneficiary) {
-      super.transferFrom(from, to, value);
-    }
-    else {
-      //Only private sale beneficiary can do direct transfer during the vesting period ignoring the cliff period
-      if (from != private_sale_beneficiary && now < vesting_end_date) {
-        releaseAndTransferFrom(from, to, value);
-      } else {
-        super.transferFrom(from, to, value);
-      }
-    }
+  function transferFrom(address _from, address _to, uint256 _value) public onlyUnlocked(_from, _value) returns (bool success) {
+    return super.transferFrom(_from, _to, _value);
   }
-
-  function releaseAndTransfer(address from, address to, uint256 value) internal returns (bool) {
-    checkAndUpdateRelease(from, value);
-    super.transfer(to, value);
-  }
-
-  function releaseAndTransferFrom(address from, address to, uint256 value) internal returns (bool) {
-    require(value <= balanceOf(from), "Account does not hold this amount of token");
-    require(value <= allowance(from, msg.sender), "Sender not allowed to release and transfer this amount of tokens");
-    checkAndUpdateRelease(from, value);
-    super.transferFrom(from, to, value);
-  }
-
-  function checkAndUpdateRelease(address from, uint256 value) internal {
-    require(from != address(0), "Invalid releasing address");
-    require(value > 0, "Invalid release value");
-    require(now > cliff_end_date, "Cliff period is not reached yet");
-    uint256 tokenAmount = balanceOf(from);
-    require(tokenAmount > 0, "unsufficent tokens");
-
-    if (vesting_end_date > now) {
-      uint256 remaining_vesting_period = vesting_end_date.sub(now);
-      uint8 remaining_vesting_years = uint8(remaining_vesting_period.div(seconds_per_years));
-
-      yearly_release storage current_year_release = releases[from][vesting_years - remaining_vesting_years];
-
-      //When it's the first release for this year
-      if (current_year_release.amount == 0) {
-        current_year_release.start_with = tokenAmount;
-        //Check if the amount desired if less than 20% for the current balance
-        require(value < tokenAmount.mul(release_yearly_rate).div(100), "Cannot release more than the yearly release rate");
-      }
-      else {
-        //Check if the amount desired if less than the 20% from the yearly balance
-        require(current_year_release.amount.add(value) < current_year_release.start_with.mul(release_yearly_rate).div(100), "Cannot release more than the yearly release rate");
-      }
-
-      current_year_release.amount = current_year_release.amount.add(value);
-    }
-
-  }
-
 }

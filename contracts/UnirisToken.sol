@@ -1,6 +1,5 @@
 pragma solidity ^0.5.0;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Pausable.sol";
@@ -46,6 +45,7 @@ contract UnirisToken is ERC20Pausable, ERC20Detailed {
     require(from != enhancement_beneficiary, "Enhancement wallet is locked forever until mainnet");
 
     //Deliverable and network pool are only unlocked for 10% of their supply
+    //These 10% will serve to rewards early contributors and nodes before mainnet.
     //The rest is locked until the main, no transfer possible
     //The swap will be done directly on the Uniris chain
     if (from == deliverables_beneficiary) {

@@ -13,7 +13,7 @@ module.exports = async function(deployer, network, accounts) {
     let foundation_beneficiary
 
     switch (network) {
-        case "live":
+        case "mainnet":
             funding_pool_benificiary = "0xC545528CB411aA971De48F5d375aF27B685a7651"
             deliverables_beneficiary = "0xEA9095614A40C34f2d6D62514a8B9305873E6763"
             network_pool_beneficiary = "0x857fFe3A3F4d47c5459b215Fd09Ddd80eE0B2f00"

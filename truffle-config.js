@@ -19,10 +19,13 @@
  */
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
+const web3 = require('web3')
 const infuraKey = "a2e1f75661e34481a06e063a04381b19";
 //
 // const fs = require('fs');
-const mnemonic = 'review symptom mutual unfair list horse laundry teach squirrel chimney coach list'
+// const mnemonic = 'review symptom mutual unfair list horse laundry teach squirrel chimney coach list'
+
+const mnemonic = process.env['ETH_MNEMONIC']
 
 module.exports = {
   /**
@@ -68,6 +71,12 @@ module.exports = {
       timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
       skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
     },
+
+    mainnet: {
+      provider: () => new HDWalletProvider(mnemonic, `https://mainnet.infura.io/v3/${infuraKey}`),
+      network_id: 1,       // Mainnet's id
+      gasPrice: web3.utils.toWei('3', 'gwei')
+    }
 
     // Useful for private networks
     // private: {

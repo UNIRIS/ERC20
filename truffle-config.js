@@ -20,12 +20,9 @@
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const web3 = require('web3')
-const infuraKey = "a2e1f75661e34481a06e063a04381b19";
-//
-// const fs = require('fs');
-// const mnemonic = 'review symptom mutual unfair list horse laundry teach squirrel chimney coach list'
-
+const infura_key = process.env['INFURA_KEY'];
 const mnemonic = process.env['ETH_MNEMONIC']
+const etherscan_api_key = process.env['ETHERSCAN_API']
 
 module.exports = {
   /**
@@ -64,7 +61,7 @@ module.exports = {
     // Useful for deploying to a public network.
     // NB: It's important to wrap the provider as a function.
     ropsten: {
-      provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/${infuraKey}`),
+      provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/${infura_key}`),
       network_id: 3,       // Ropsten's id
       gas: 5500000,        // Ropsten has a lower block limit than mainnet
       confirmations: 2,    // # of confs to wait between deployments. (default: 0)
@@ -73,7 +70,7 @@ module.exports = {
     },
 
     mainnet: {
-      provider: () => new HDWalletProvider(mnemonic, `https://mainnet.infura.io/v3/${infuraKey}`),
+      provider: () => new HDWalletProvider(mnemonic, `https://mainnet.infura.io/v3/${infura_key}`),
       network_id: 1,       // Mainnet's id
       gasPrice: web3.utils.toWei('3', 'gwei')
     }
@@ -104,5 +101,13 @@ module.exports = {
       //  evmVersion: "byzantium"
       // }
     }
+  },
+
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+
+  api_keys: {
+    etherscan: etherscan_api_key
   }
 }
